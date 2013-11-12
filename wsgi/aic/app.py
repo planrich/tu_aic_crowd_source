@@ -5,12 +5,9 @@ import db
 import os
 import settings
 import requests
-import logging, sys
 
 from sqlalchemy.orm.exc import NoResultFound
 from requests.exceptions import Timeout, ConnectionError
-
-logging.basicConfig(stream=sys.stderr)
 
 application = Flask(__name__)
 application.secret_key = settings.SECRET_KEY
