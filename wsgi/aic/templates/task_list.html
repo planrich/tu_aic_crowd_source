@@ -21,7 +21,7 @@
                 <td>{{ task.id }}</td>
                 <td>{{ task.task_description }}</td>
                 <td>{{ task.task_text }}</td>
-                <td>{{ task.datetime }}</td>
+                <td>{{ task.datetime | ago(1) }}</td>
             </tr>
         {% endfor %}
     </tbody>

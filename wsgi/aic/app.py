@@ -1,16 +1,15 @@
 # encoding: utf-8
 from flask import Flask, request, render_template, json, flash, redirect, url_for, session
-import platform
 import db
-import os
 import settings
 import requests
+import ago
 
 from sqlalchemy.orm.exc import NoResultFound
-from requests.exceptions import Timeout, ConnectionError
 
 application = Flask(__name__)
 application.secret_key = settings.SECRET_KEY
+application.jinja_env.filters['ago'] = ago.human
 
 @application.route("/")
 def index():
@@ -27,7 +26,7 @@ def solve_task():
         if "user_id" not in request.form:
             flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
             return redirect(url_for("solve_task",r="t"))
-        
+
         if "task_id" not in request.form:
             flash("Internal failure. Here is a new task!", "danger")
             return redirect(url_for("solve_task",r="t"))
