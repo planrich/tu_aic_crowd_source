@@ -6,6 +6,7 @@ import requests
 import ago
 
 from sqlalchemy.orm.exc import NoResultFound
+from  sqlalchemy.sql.expression import func
 
 application = Flask(__name__)
 application.secret_key = settings.SECRET_KEY
@@ -19,7 +20,7 @@ def index():
 def get_solve_task():
     sess = db.Session()
     try:
-        task = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).limit(1).one()
+        task = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).order_by(func.random()).limit(1).one()
     except NoResultFound:
         task = None
     user_id = session.get("user_id") or ""
