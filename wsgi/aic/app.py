@@ -15,65 +15,64 @@ application.jinja_env.filters['ago'] = ago.human
 def index():
     return render_template("index.html")
 
-@application.route("/solve_task", methods=["POST","GET"])
-def solve_task():
+@application.route("/solve_task", methods=["GET"])
+def get_solve_task():
     sess = db.Session()
-    if request.method == "POST":
-        if "answer" not in request.form:
-            flash("Task was not rated. No answer provided. Here is a new task!", "danger")
-            return redirect(url_for("solve_task",r="t"))
+    try:
+        task = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).limit(1).one()
+    except NoResultFound:
+        task = None
+    user_id = session.get("user_id") or ""
+    return render_template("solve_task.html", task=task, user_id=user_id)
 
-        if "user_id" not in request.form:
-            flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
-            return redirect(url_for("solve_task",r="t"))
+@application.route("/solve_task", methods=["POST"])
+def post_solve_task():
+    sess = db.Session()
+    if "answer" not in request.form:
+        flash("Task was not rated. No answer provided. Here is a new task!", "danger")
+        return redirect(url_for("get_solve_task",r="t"))
 
-        if "task_id" not in request.form:
-            flash("Internal failure. Here is a new task!", "danger")
-            return redirect(url_for("solve_task",r="t"))
+    if "user_id" not in request.form:
+        flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
+        return redirect(url_for("get_solve_task",r="t"))
 
-        answer = request.form["answer"]
-        task_id = request.form["task_id"]
-        user_id = request.form["user_id"]
+    if "task_id" not in request.form:
+        flash("Internal failure. Here is a new task!", "danger")
+        return redirect(url_for("get_solve_task",r="t"))
 
-        if user_id is None or user_id.strip() == "":
-            flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
-            return redirect(url_for("solve_task",r="t"))
+    answer = request.form["answer"]
+    task_id = request.form["task_id"]
+    user_id = request.form["user_id"]
 
-        session['user_id'] = user_id
+    if user_id is None or user_id.strip() == "":
+        flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
+        return redirect(url_for("get_solve_task",r="t"))
 
-        try:
-            task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).one()
-        except NoResultFound:
-            flash("Internal failure. Here is a new task!", "danger")
-            return redirect(url_for("solve_task",r="t"))
+    session['user_id'] = user_id
+
+    try:
+        task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).one()
+    except NoResultFound:
+        flash("Internal failure. Here is a new task!", "danger")
+        return redirect(url_for("get_solve_task",r="t"))
+
+    post_body = { "id": task_id, "answer": answer, "user": user_id }
+    headers = {'content-type':'application/json'}
+    try:
+        result = requests.post(task.callback_link, data=json.dumps(post_body), headers=headers, timeout=10)
+        if result.status_code != requests.codes.ok:
+            flash("Internal error 4! Could not finish task. Here is a new one!","danger")
+            return redirect(url_for("get_solve_task",r="t"))
+    except Exception:
+        flash("Internal error 5! Could not finish task. Here is a new one!","danger")
+        return redirect(url_for("get_solve_task",r="t"))
 
 
+    task.solved = True
+    sess.commit()
 
-        post_body = { "id": task_id, "answer": answer, "user": user_id }
-        headers = {'content-type':'application/json'}
-        try:
-            result = requests.post(task.callback_link, data=json.dumps(post_body), headers=headers, timeout=10)
-            if result.status_code != requests.codes.ok:
-                flash("Internal error 4! Could not finish task. Here is a new one!","danger")
-                return redirect(url_for("solve_task",r="t"))
-        except Exception:
-            flash("Internal error 5! Could not finish task. Here is a new one!","danger")
-            return redirect(url_for("solve_task",r="t"))
-
-
-        task.solved = True
-        sess.commit()
-
-        flash("Solved task. Here is a new one!", "success")
-        return redirect(url_for("solve_task",r="t"))
-    else:
-        try:
-            task = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).limit(1).one()
-        except NoResultFound:
-            task = None
-
-        user_id = session.get("user_id") or ""
-        return render_template("solve_task.html", task=task, user_id=user_id)
+    flash("Solved task. Here is a new one!", "success")
+    return redirect(url_for("get_solve_task",r="t"))
 
 @application.route("/list_tasks", methods=['GET'])
 def list_tasks():
