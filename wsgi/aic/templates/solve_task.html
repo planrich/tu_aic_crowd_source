@@ -1,39 +1,38 @@
 {% extends "layout.html" %}
 {% block title %}AIC 13{% endblock %}
 {% block content %}
-<style type="text/css">
-.task_text {
-    margin-top: -10px;
-    background-color: #e3e3e3;
-    padding: 5px;
-    padding-left: 10px;
-    border-radius: 2px;
-
-}
-</style>
-<h1>Solve a task</h1>
 {% if not task %}
-<p class="lead">Oh, there is not task to solve! Try again later...</p>
+<div class="alert alert-info">
+    <strong>Oh, there is not task to solve!</strong> Try again later...
+</div>
 {% else %}
-<form action="{{ url_for("solve_task") }}" method="POST">
-    <input type="hidden" name="task_id" value="{{task.id}}" />
-    <div class="row">
-        <div class="col-md-3">
-            <input id="user_id" type="text" name="user_id" value="{{user_id}}" placeholder="User ID" />
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Solve a task</h3>
+  </div>
+  <div class="panel-body">
+    <form action="{{ url_for("get_solve_task") }}" method="POST">
+        <input type="hidden" name="task_id" value="{{task.id}}" />
+        <div class="form-group">
+          <label for="user_id">Enter your user ID:</label>
+          <input class="form-control" id="user_id" type="text" name="user_id" value="{{user_id}}" placeholder="User ID" />
         </div>
-    </div>
-    <div>
-        <p class="lead">Question: {{task.task_description}} </p>
-        <p class="task_text">{{task.task_text}}</p>
-    </div>
-    <div>
-        {% for option in task.answer_options() %}
-            <input type="radio" name="answer" value="{{option}}" /> {{option}}
-        {% endfor %}
-    </div>
-    <br/>
-    <input class="btn" type="submit" value="Save and Continue" />
-</form>
-
+        <label>{{task.task_description}}</label>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <p class="task_text">{{task.task_text}}</p>
+          </div>
+        </div>
+        <div>
+            {% for option in task.answer_options() %}
+                <input type="radio" name="answer" value="{{option}}" /> {{option}}
+            {% endfor %}
+        </div>
+        <br>
+        <button class="btn btn-primary" type="submit">Send solution</button>
+        <a class="btn btn-default" href="/">Cancel</a>
+    </form>
+  </div>
+</div>
 {% endif %}
 {% endblock %}

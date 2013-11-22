@@ -8,17 +8,28 @@
         {% endblock %}
     </head>
     <body>
-        <div class='container'>
-            {% with messages = get_flashed_messages(with_categories=True) %}
-            {% if messages %}
-              <p>
-              {% for category,message in messages %}
-              <span class="alert alert-{{category}}">{{message}}</span>
-              {% endfor %}
-              </p>
-            {% endif %}
-            {% endwith %}
-            {% block content %}{% endblock %}
+      <nav class="navbar navbar-default" role="navigation">
+        <div class="container">
+          <div class="navbar-header">
+            <a class="navbar-brand" href="/">Crowd source</a>
+          </div>
+          <ul class="nav navbar-nav">
+            <li><a href="/open_tasks">Browse</a></li>
+            <li><a href="/solve_task">Solve random task</a></li>
+          </ul>
         </div>
+      </nav>
+      <div class='container'>
+          {% with messages = get_flashed_messages(with_categories=True) %}
+          {% if messages %}
+            {% for category,message in messages %}
+            <div class="alert alert-{{category}}">
+              {{message}}
+            </div>
+            {% endfor %}
+          {% endif %}
+          {% endwith %}
+          {% block content %}{% endblock %}
+      </div>
     </body>
 </html>
