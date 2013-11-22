@@ -81,7 +81,7 @@ def post_solve_task():
 @application.route("/open_tasks", methods=['GET'])
 def get_open_tasks():
     sess = db.Session()
-    open_tasks = sess.query(db.OpenTask).all()
+    open_tasks = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).all()
     return render_template("task_list.html", tasks = open_tasks)
 
 
