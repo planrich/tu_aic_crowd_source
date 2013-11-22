@@ -23,7 +23,7 @@ def get_solve_task():
     sess = db.Session()
     task_id = request.args.get('task')
     if task_id:
-        task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).order_by(func.random()).limit(1).first()
+        task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).first()
     else:
         task = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).order_by(func.random()).limit(1).first()
     user_id = session.get("user_id") or ""
