@@ -4,6 +4,7 @@ import db
 import settings
 import requests
 import ago
+import utils
 
 from sqlalchemy.orm.exc import NoResultFound
 from  sqlalchemy.sql.expression import func
@@ -11,6 +12,7 @@ from  sqlalchemy.sql.expression import func
 application = Flask(__name__)
 application.secret_key = settings.SECRET_KEY
 application.jinja_env.filters['ago'] = ago.human
+application.jinja_env.filters['max_size'] = utils.max_size
 
 @application.route("/")
 def index():
