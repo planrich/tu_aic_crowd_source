@@ -14,7 +14,7 @@ application.jinja_env.filters['ago'] = ago.human
 
 @application.route("/")
 def index():
-    return render_template("index.html")
+    return redirect(url_for("get_open_tasks"))
 
 @application.route("/solve_task", methods=["GET"])
 def get_solve_task():
@@ -75,8 +75,8 @@ def post_solve_task():
     flash("Solved task. Here is a new one!", "success")
     return redirect(url_for("get_solve_task",r="t"))
 
-@application.route("/list_tasks", methods=['GET'])
-def list_tasks():
+@application.route("/open_tasks", methods=['GET'])
+def get_open_tasks():
     sess = db.Session()
     open_tasks = sess.query(db.OpenTask).all()
     return render_template("task_list.html", tasks = open_tasks)
