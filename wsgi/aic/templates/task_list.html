@@ -7,10 +7,11 @@
     </div>
     <table class="table table-striped">
         <colgroup>
-            <col width="10%" />
+            <col width="5%" />
             <col width="40%" />
             <col width="40%" />
             <col width="10%" />
+            <col width="5%" />
         </colgroup>
         <tbody>
             <tr>
@@ -18,6 +19,7 @@
                 <th>Question</th>
                 <th>Text</th>
                 <th>Date</th>
+                <th></th>
             </tr>
             {% for task in tasks %}
                 <tr>
@@ -25,6 +27,7 @@
                     <td>{{ task.task_description }}</td>
                     <td>{{ task.task_text | max_size(30) }}</td>
                     <td>{{ task.datetime | ago(1) }}</td>
+                    <td><a href="/solve_task?task={{task.id}}" class="btn btn-default btn-sm">Solve</a></td>
                 </tr>
             {% endfor %}
         </tbody>
