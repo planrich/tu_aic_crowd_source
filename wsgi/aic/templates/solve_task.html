@@ -34,5 +34,29 @@
     </form>
   </div>
 </div>
+<script type="text/javascript">
+    $(document).ready(function(){
+        var regex = /Is (.+) mentioned/gi;
+        var result = regex.exec("{{task.task_description}}")
+        if (result) {
+           var keyword = RegExp.$1;
+           var regex = new RegExp(keyword, "gi");
+           $(".task_text").each(function(){
+               $(this).replaceWith(function(){
+                   return ($(this).text() || "").replace(regex, function(matched) { 
+                       return '<span class="label label-primary" style="background: orange;">'+matched+'</span>'
+                   })
+               })
+           })
+           $(".task_text").each(function(){
+               $(this).replaceWith(function(){
+                   return ($(this).text() || "").replace(regex, function(matched) { 
+                       return '<span class="label label-primary" style="background: orange;">'+matched+'</span>'
+                   })
+               })
+           })
+        }
+    })
+</script>
 {% endif %}
 {% endblock %}
