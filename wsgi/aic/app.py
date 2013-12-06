@@ -109,7 +109,7 @@ def task():
             "task_text":"lorem ipsum ...",
             "answer_possibilities":["yes","no","neutral"],
             "callback_link":"http://localhost:5000/webook",
-            "price":1234 })
+            "price":12.34 })
         return json.dumps({ 'error': ('provide a valid json body! example: %s' % (example,)) }), 400
 
     session = db.Session()
