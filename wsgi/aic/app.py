@@ -81,7 +81,7 @@ def post_solve_task():
 @application.route("/open_tasks", methods=['GET'])
 def get_open_tasks():
     sess = db.Session()
-    open_tasks = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).order_by(db.OpenTask.datetime.desc()).limit(10000)
+    open_tasks = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).order_by(db.OpenTask.datetime.asc()).limit(10000)
     return render_template("task_list.html", tasks = open_tasks)
 
 
@@ -133,7 +133,49 @@ def task():
 
     result = { 'error': None, 'success': True }
 
-    return json.dumps(result), 200
+    return json.dumps(result)
+
+def sanitize_set_bonus(json):
+    if not json:
+        print("fail")
+        return None
+
+    if not 'id' in json or\
+       not 'price_bonus' in json:
+       return None
+
+    return json
+
+@application.route("/set_bonus", methods=['POST'] )
+def set_bonus():
+    j = sanitize_set_bonus(request.get_json(force=True,silent=True))
+    if not j:
+        example = json.dumps({ "id":"123",
+            "price_bonus":12.34 })
+        return json.dumps({ 'error': ('provide a valid json body! example: %s' % (example,)) }), 400
+
+    session = db.Session()
+
+    tid = j['id']
+    if session.query(db.OpenTask).filter(db.OpenTask.id == tid).count() == 0:
+        session.close()
+        return json.dumps({ 'error': 'id does not exists' }), 400
+    else:
+
+        session.close()
+
+        session = db.Session()
+
+        tasks = session.query(db.OpenTask).filter(db.OpenTask.id == tid)
+        for task in tasks:
+            task.price_bonus = j['price_bonus']
+
+        session.commit()
+
+        result = { 'error': None, 'success': True }, 200
+
+        return json.dumps(result)    
+        session.commit()
 
 if __name__ == "__main__":
     application.debug = True

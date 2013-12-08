@@ -32,8 +32,7 @@
                     <td>{{ task.task_text | max_size(30) }}</td>
                     <td>{{ task.datetime | ago(1) }}</td>
                     <td>{{ task.price }}</td>
-                    <td> 0 </td>
-                    <td> {{task.bonus}} </td>
+                    <td>{{ task.price_bonus }} </td>
                     <td><a href="/solve_task?task={{task.id}}" class="btn btn-default btn-sm">Solve</a></td>
                 </tr>
             {% endfor %}
