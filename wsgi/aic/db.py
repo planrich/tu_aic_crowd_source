@@ -22,7 +22,7 @@ class OpenTask(Base):
     callback_link = Column(String)
     solved = Column(Boolean)
     price = Column(sqlalchemy.Float)
-    price_factor = Column(sqlalchemy.Float)
+    price_bonus = Column(sqlalchemy.Float)
 
 
     def __init__(self, id, desc, text, answer, link, cents):
@@ -34,7 +34,7 @@ class OpenTask(Base):
         self.price = cents
         self.datetime = dt.datetime.now()
         self.solved = False
-        self.price_factor = 1
+        self.price_bonus = 0
 
     def answer_options(self):
         return self.answer_possibility.split("|")
