@@ -81,7 +81,7 @@ def post_solve_task():
 @application.route("/open_tasks", methods=['GET'])
 def get_open_tasks():
     sess = db.Session()
-    open_tasks = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).limit(100000)
+    open_tasks = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).limit(1000)
     return render_template("task_list.html", tasks = open_tasks)
 
 
