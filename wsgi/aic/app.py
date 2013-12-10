@@ -177,6 +177,51 @@ def set_bonus():
         return json.dumps(result)    
         session.commit()
 
+def sanitize_set_garbage(json):
+    if not json:
+        print("fail")
+        return None
+
+    if not 'id' in json:
+       return None
+
+    return json
+
+@application.route("/set_garbage", methods=['POST'])
+def set_garbage():
+    j = sanitize_set_garbage(request.get_json(force=True,silent=True))
+    if not j:
+        example = json.dumps({ "id":"123",
+            "price_bonus":12.34 })
+        return json.dumps({ 'error': ('provide a valid json body! example: %s' % (example,)) }), 400
+
+    session = db.Session()
+
+    print "bla"
+
+    tid = j['id']
+    try:
+        task = session.query(db.OpenTask).filter(db.OpenTask.id == tid).one()
+    except NoResultFound:
+        session.close()
+        return json.dumps({ 'error': 'id does not exists' }), 400
+    except MultipleResultsFound:
+        session.close()
+        return json.dumps({ 'error': 'more than one result found' }), 400
+
+
+    print(task.id)
+
+    session.delete(task)
+
+
+    session.commit()
+
+    result = { 'error': None, 'success': True }, 200
+
+    return json.dumps(result)    
+
+
 if __name__ == "__main__":
     application.debug = True
     application.run(port=5001)
