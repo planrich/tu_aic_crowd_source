@@ -6,6 +6,7 @@ import settings
 import requests
 import ago
 import utils
+import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 from  sqlalchemy.sql.expression import func
@@ -15,8 +16,19 @@ application.secret_key = settings.SECRET_KEY
 application.jinja_env.filters['ago'] = ago.human
 application.jinja_env.filters['max_size'] = utils.max_size
 
+logger = logging.getLogger("crowd")
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+console.setFormatter(formatter)
+logger.addHandler(console)
+
+logger.info("setting logging level to INFO")
+
 @application.route("/")
 def index():
+    logger.info("redirecting to get open tasks")
     return redirect(url_for("get_open_tasks"))
 
 @application.route("/solve_task", methods=["GET"])
@@ -139,7 +151,7 @@ def get_open_tasks():
 
 def sanitize_post_task(json):
     if not json:
-        print("fail")
+        logger.error("could not sanitize post task json")
         return None
 
     if not 'id' in json or\
@@ -189,7 +201,7 @@ def task():
 
 def sanitize_set_bonus(json):
     if not json:
-        print("fail")
+        logger.error("could not sanitize set bonus json")
         return None
 
     if not 'id' in json or\
@@ -231,7 +243,7 @@ def set_bonus():
 
 def sanitize_set_garbage(json):
     if not json:
-        print("fail")
+        logger.error("could not sanitize set garbage json")
         return None
 
     if not 'id' in json:
@@ -249,8 +261,6 @@ def set_garbage():
 
     session = db.Session()
 
-    print "bla"
-
     tid = j['id']
     try:
         task = session.query(db.OpenTask).filter(db.OpenTask.id == tid).one()
@@ -261,11 +271,9 @@ def set_garbage():
         session.close()
         return json.dumps({ 'error': 'more than one result found' }), 400
 
-
-    print(task.id)
+    logger.info("set garbage called with task id %d", task.id)
 
     session.delete(task)
-
 
     session.commit()
 
