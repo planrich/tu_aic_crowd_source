@@ -19,9 +19,11 @@ class OpenTask(Base):
     task_description = Column(String)
     task_text = Column(String)
     answer_possibility = Column(String) # hacky
-    price_cents = Column(Integer)
     callback_link = Column(String)
     solved = Column(Boolean)
+    price = Column(sqlalchemy.Float)
+    price_bonus = Column(sqlalchemy.Float)
+
 
     def __init__(self, id, desc, text, answer, link, cents):
         self.id = id
@@ -29,9 +31,10 @@ class OpenTask(Base):
         self.task_text = text
         self.answer_possibility = answer
         self.callback_link = link
-        self.price_cents = cents
+        self.price = cents
         self.datetime = dt.datetime.now()
         self.solved = False
+        self.price_bonus = 0
 
     def answer_options(self):
         return self.answer_possibility.split("|")

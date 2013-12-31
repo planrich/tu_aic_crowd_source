@@ -104,15 +104,17 @@ def get_open_tasks():
     order_by, limit, page = sanitize_open_task_list_params()
 
     sess = db.Session()
-    open_tasks = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).offset(page * limit).limit(limit).all()
+    open_tasks = sess.query(db.OpenTask)\
+        .order_by(db.OpenTask.datetime.asc())\
+        .filter(db.OpenTask.solved == False)\
+        .offset(page * limit).limit(limit)\
+        .all()
 
     task_count = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).count()
-    max_page = int(task_count / limit)
-    import itertools
-
 
     display_pages = 3
     page_count = int(task_count/limit)
+    max_page = page_count
     ipages = list(utils.drop(range(0, page_count), page))
     post_pages = list(utils.drop(ipages, len(ipages) - display_pages))
     pre_pages = list(utils.take(ipages, len(ipages) - display_pages))
@@ -159,7 +161,7 @@ def task():
             "task_text":"lorem ipsum ...",
             "answer_possibilities":["yes","no","neutral"],
             "callback_link":"http://localhost:5000/webook",
-            "price":1234 }
+            "price":12.34 }
         return json.dumps({ 'error': 'provide a valid json body!', 'example': example }), 400
 
     session = db.Session()
@@ -183,7 +185,94 @@ def task():
 
     result = { 'error': None, 'success': True }
 
-    return json.dumps(result), 200
+    return json.dumps(result)
+
+def sanitize_set_bonus(json):
+    if not json:
+        print("fail")
+        return None
+
+    if not 'id' in json or\
+       not 'price_bonus' in json:
+       return None
+
+    return json
+
+@application.route("/set_bonus", methods=['POST'] )
+def set_bonus():
+    j = sanitize_set_bonus(request.get_json(force=True,silent=True))
+    if not j:
+        example = json.dumps({ "id":"123",
+            "price_bonus":12.34 })
+        return json.dumps({ 'error': ('provide a valid json body! example: %s' % (example,)) }), 400
+
+    session = db.Session()
+
+    tid = j['id']
+    if session.query(db.OpenTask).filter(db.OpenTask.id == tid).count() == 0:
+        session.close()
+        return json.dumps({ 'error': 'id does not exists' }), 400
+    else:
+
+        session.close()
+
+        session = db.Session()
+
+        tasks = session.query(db.OpenTask).filter(db.OpenTask.id == tid)
+        for task in tasks:
+            task.price_bonus = j['price_bonus']
+
+        session.commit()
+
+        result = { 'error': None, 'success': True }, 200
+
+        return json.dumps(result)    
+        session.commit()
+
+def sanitize_set_garbage(json):
+    if not json:
+        print("fail")
+        return None
+
+    if not 'id' in json:
+       return None
+
+    return json
+
+@application.route("/set_garbage", methods=['POST'])
+def set_garbage():
+    j = sanitize_set_garbage(request.get_json(force=True,silent=True))
+    if not j:
+        example = json.dumps({ "id":"123",
+            "price_bonus":12.34 })
+        return json.dumps({ 'error': ('provide a valid json body! example: %s' % (example,)) }), 400
+
+    session = db.Session()
+
+    print "bla"
+
+    tid = j['id']
+    try:
+        task = session.query(db.OpenTask).filter(db.OpenTask.id == tid).one()
+    except NoResultFound:
+        session.close()
+        return json.dumps({ 'error': 'id does not exists' }), 400
+    except MultipleResultsFound:
+        session.close()
+        return json.dumps({ 'error': 'more than one result found' }), 400
+
+
+    print(task.id)
+
+    session.delete(task)
+
+
+    session.commit()
+
+    result = { 'error': None, 'success': True }, 200
+
+    return json.dumps(result)    
+
 
 if __name__ == "__main__":
     application.debug = True
