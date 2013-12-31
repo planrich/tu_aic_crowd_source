@@ -32,5 +32,22 @@
             {% endfor %}
         </tbody>
     </table>
-</div
+</div>
+<ul class="pagination pull-right">
+  {% if page > 0 %}
+    <li><a href="{{url_for('get_open_tasks', page=page-1)}}">&laquo;</a></li>
+  {% endif %}
+  {% for p in pre_pages %}
+  <li class="{{'active' if p == page else ''}}"><a href="{{url_for('get_open_tasks', page=p)}}">{{p + 1}}</a></li>
+  {% endfor %}
+  {% if display_dots %}
+      <li class="disabled"><a href="#">...</a></li>
+  {% endif %}
+  {% for p in post_pages %}
+      <li class="{{'active' if p == page else ''}}"><a href="{{url_for('get_open_tasks', page=p)}}">{{p + 1}}</a></li>
+  {% endfor %}
+  {% if page < max_page - 1 %}
+    <li><a href="{{url_for('get_open_tasks', page=page+1)}}">&raquo;</a></li>
+  {% endif %}
+</ul>
 {% endblock %}

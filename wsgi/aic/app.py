@@ -1,4 +1,5 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
+
 from flask import Flask, request, render_template, json, flash, redirect, url_for, session
 import db
 import settings
@@ -78,11 +79,60 @@ def post_solve_task():
     flash("Solved task. Here is a new one!", "success")
     return redirect(url_for("get_solve_task",r="t"))
 
+def sanitize_open_task_list_params():
+    order_by = 'id'
+    limit = 10
+    page = 0
+
+    ORDER_POS = [ 'id', 'question', 'text', 'date' ]
+
+    if "order" in request.args and request.args["order"] in ORDER_POS:
+        order_by = request.args["order"]
+
+    if "limit" in request.args:
+        limit = int(request.args["limit"])
+
+    if "page" in request.args:
+        page = int(request.args["page"])
+
+    return order_by, limit, page
+
+
 @application.route("/open_tasks", methods=['GET'])
 def get_open_tasks():
+
+    order_by, limit, page = sanitize_open_task_list_params()
+
     sess = db.Session()
-    open_tasks = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).all()
-    return render_template("task_list.html", tasks = open_tasks)
+    open_tasks = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).offset(page * limit).limit(limit).all()
+
+    task_count = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).count()
+    max_page = int(task_count / limit)
+    import itertools
+
+
+    display_pages = 3
+    page_count = int(task_count/limit)
+    ipages = list(utils.drop(range(0, page_count), page))
+    post_pages = list(utils.drop(ipages, len(ipages) - display_pages))
+    pre_pages = list(utils.take(ipages, len(ipages) - display_pages))
+    pre_pages = list(utils.take(pre_pages, display_pages))
+    display_dots = len(ipages) > (display_pages * 2)
+    if not display_dots:
+        pre_pages = []
+        post_pages = utils.drop(range(0, int(task_count/limit)), page_count - display_pages * 2)
+
+    return render_template("task_list.html", 
+            tasks = open_tasks, 
+            page = page, 
+            pre_pages = pre_pages,
+            post_pages = post_pages,
+            count = task_count,
+            limit = limit,
+            max_page = max_page,
+            display_dots = display_dots,
+            int = int,
+            len = len)
 
 
 def sanitize_post_task(json):
@@ -104,13 +154,13 @@ def sanitize_post_task(json):
 def task():
     j = sanitize_post_task(request.get_json(force=True,silent=True))
     if not j:
-        example = json.dumps({ "id":"123",
+        example = { "id":"123",
             "task_description":"Is company mentioned positive/neutral/negative in the following paragraph?",
             "task_text":"lorem ipsum ...",
             "answer_possibilities":["yes","no","neutral"],
             "callback_link":"http://localhost:5000/webook",
-            "price":1234 })
-        return json.dumps({ 'error': ('provide a valid json body! example: %s' % (example,)) }), 400
+            "price":1234 }
+        return json.dumps({ 'error': 'provide a valid json body!', 'example': example }), 400
 
     session = db.Session()
 
