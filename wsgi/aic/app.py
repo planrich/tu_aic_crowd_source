@@ -33,63 +33,63 @@ def index():
 
 @application.route("/solve_task", methods=["GET"])
 def get_solve_task():
-    sess = db.Session()
-    task_id = request.args.get('task')
-    if task_id:
-        task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).first()
-    else:
-        task = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).order_by(func.random()).limit(1).first()
-    user_id = session.get("user_id") or ""
-    return render_template("solve_task.html", task=task, user_id=user_id)
+    with db.session_scope() as sess:
+        task_id = request.args.get('task')
+        if task_id:
+            task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).first()
+        else:
+            task = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).order_by(func.random()).limit(1).first()
+        user_id = session.get("user_id") or ""
+        return render_template("solve_task.html", task=task, user_id=user_id)
 
 @application.route("/solve_task", methods=["POST"])
 def post_solve_task():
-    sess = db.Session()
-    if "answer" not in request.form:
-        flash("Task was not rated. No answer provided. Here is a new task!", "danger")
-        return redirect(url_for("get_solve_task",r="t"))
-
-    if "user_id" not in request.form:
-        flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
-        return redirect(url_for("get_solve_task",r="t"))
-
-    if "task_id" not in request.form:
-        flash("Internal failure. Here is a new task!", "danger")
-        return redirect(url_for("get_solve_task",r="t"))
-
-    answer = request.form["answer"]
-    task_id = request.form["task_id"]
-    user_id = request.form["user_id"]
-
-    if user_id is None or user_id.strip() == "":
-        flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
-        return redirect(url_for("get_solve_task",r="t"))
-
-    session['user_id'] = user_id
-
-    try:
-        task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).one()
-    except NoResultFound:
-        flash("Internal failure. Here is a new task!", "danger")
-        return redirect(url_for("get_solve_task",r="t"))
-
-    post_body = { "id": task_id, "answer": answer, "user": user_id }
-    headers = {'content-type':'application/json'}
-    try:
-        result = requests.post(task.callback_link, data=json.dumps(post_body), headers=headers, timeout=10)
-        if result.status_code != requests.codes.ok:
-            flash("Internal error 4! Could not finish task. Here is a new one!","danger")
+    with db.session_scope() as sess:
+        if "answer" not in request.form:
+            flash("Task was not rated. No answer provided. Here is a new task!", "danger")
             return redirect(url_for("get_solve_task",r="t"))
-    except Exception:
-        flash("Internal error 5! Could not finish task. Here is a new one!","danger")
+
+        if "user_id" not in request.form:
+            flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
+            return redirect(url_for("get_solve_task",r="t"))
+
+        if "task_id" not in request.form:
+            flash("Internal failure. Here is a new task!", "danger")
+            return redirect(url_for("get_solve_task",r="t"))
+
+        answer = request.form["answer"]
+        task_id = request.form["task_id"]
+        user_id = request.form["user_id"]
+
+        if user_id is None or user_id.strip() == "":
+            flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
+            return redirect(url_for("get_solve_task",r="t"))
+
+        session['user_id'] = user_id
+
+        try:
+            task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).one()
+        except NoResultFound:
+            flash("Internal failure. Here is a new task!", "danger")
+            return redirect(url_for("get_solve_task",r="t"))
+
+        post_body = { "id": task_id, "answer": answer, "user": user_id }
+        headers = {'content-type':'application/json'}
+        try:
+            result = requests.post(task.callback_link, data=json.dumps(post_body), headers=headers, timeout=10)
+            if result.status_code != requests.codes.ok:
+                flash("Internal error 4! Could not finish task. Here is a new one!","danger")
+                return redirect(url_for("get_solve_task",r="t"))
+        except Exception:
+            flash("Internal error 5! Could not finish task. Here is a new one!","danger")
+            return redirect(url_for("get_solve_task",r="t"))
+
+
+        task.solved = True
+        sess.commit()
+
+        flash("Solved task. Here is a new one!", "success")
         return redirect(url_for("get_solve_task",r="t"))
-
-
-    task.solved = True
-    sess.commit()
-
-    flash("Solved task. Here is a new one!", "success")
-    return redirect(url_for("get_solve_task",r="t"))
 
 def sanitize_open_task_list_params():
     order_by = 'id'
@@ -115,38 +115,38 @@ def get_open_tasks():
 
     order_by, limit, page = sanitize_open_task_list_params()
 
-    sess = db.Session()
-    open_tasks = sess.query(db.OpenTask)\
-        .order_by(db.OpenTask.datetime.asc())\
-        .filter(db.OpenTask.solved == False)\
-        .offset(page * limit).limit(limit)\
-        .all()
+    with db.session_scope() as sess:
+        open_tasks = sess.query(db.OpenTask)\
+            .order_by(db.OpenTask.datetime.asc())\
+            .filter(db.OpenTask.solved == False)\
+            .offset(page * limit).limit(limit)\
+            .all()
 
-    task_count = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).count()
+        task_count = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).count()
 
-    display_pages = 3
-    page_count = int(task_count/limit)
-    max_page = page_count
-    ipages = list(utils.drop(range(0, page_count), page))
-    post_pages = list(utils.drop(ipages, len(ipages) - display_pages))
-    pre_pages = list(utils.take(ipages, len(ipages) - display_pages))
-    pre_pages = list(utils.take(pre_pages, display_pages))
-    display_dots = len(ipages) > (display_pages * 2)
-    if not display_dots:
-        pre_pages = []
-        post_pages = utils.drop(range(0, int(task_count/limit)), page_count - display_pages * 2)
+        display_pages = 3
+        page_count = int(task_count/limit)
+        max_page = page_count
+        ipages = list(utils.drop(range(0, page_count), page))
+        post_pages = list(utils.drop(ipages, len(ipages) - display_pages))
+        pre_pages = list(utils.take(ipages, len(ipages) - display_pages))
+        pre_pages = list(utils.take(pre_pages, display_pages))
+        display_dots = len(ipages) > (display_pages * 2)
+        if not display_dots:
+            pre_pages = []
+            post_pages = utils.drop(range(0, int(task_count/limit)), page_count - display_pages * 2)
 
-    return render_template("task_list.html", 
-            tasks = open_tasks, 
-            page = page, 
-            pre_pages = pre_pages,
-            post_pages = post_pages,
-            count = task_count,
-            limit = limit,
-            max_page = max_page,
-            display_dots = display_dots,
-            int = int,
-            len = len)
+        return render_template("task_list.html", 
+                tasks = open_tasks, 
+                page = page, 
+                pre_pages = pre_pages,
+                post_pages = post_pages,
+                count = task_count,
+                limit = limit,
+                max_page = max_page,
+                display_dots = display_dots,
+                int = int,
+                len = len)
 
 
 def sanitize_post_task(json):
@@ -176,28 +176,27 @@ def task():
             "price":12.34 }
         return json.dumps({ 'error': 'provide a valid json body!', 'example': example }), 400
 
-    session = db.Session()
+    with db.session_scope() as session:
+        tid = j['id']
+        if session.query(db.OpenTask).filter(db.OpenTask.id == tid).count() != 0:
+            return json.dumps({ 'error': 'id already exists' }), 400
 
-    tid = j['id']
-    if session.query(db.OpenTask).filter(db.OpenTask.id == tid).count() != 0:
-        return json.dumps({ 'error': 'id already exists' }), 400
+        answers = j['answer_possibilities']
+        answer = None
+        if type(answers) is type([]):
+            answer = "|".join(answers)
+        elif answers == 'text':
+            answer = "text"
+        else:
+            return json.dumps({ 'error': 'answer_possibilities must either be of type list ["yes","no",...] or "text"' }), 400
 
-    answers = j['answer_possibilities']
-    answer = None
-    if type(answers) is type([]):
-        answer = "|".join(answers)
-    elif answers == 'text':
-        answer = "text"
-    else:
-        return json.dumps({ 'error': 'answer_possibilities must either be of type list ["yes","no",...] or "text"' }), 400
+        open_task = db.OpenTask(j['id'], j['task_description'], j['task_text'], answer, j['callback_link'], j['price'])
+        session.add(open_task)
+        session.commit()
 
-    open_task = db.OpenTask(j['id'], j['task_description'], j['task_text'], answer, j['callback_link'], j['price'])
-    session.add(open_task)
-    session.commit()
+        result = { 'error': None, 'success': True }
 
-    result = { 'error': None, 'success': True }
-
-    return json.dumps(result)
+        return json.dumps(result)
 
 def sanitize_set_bonus(json):
     if not json:
@@ -218,28 +217,18 @@ def set_bonus():
             "price_bonus":12.34 })
         return json.dumps({ 'error': ('provide a valid json body! example: %s' % (example,)) }), 400
 
-    session = db.Session()
+    with db.session_scope() as session:
+        tid = j['id']
+        if session.query(db.OpenTask).filter(db.OpenTask.id == tid).count() == 0:
+            return json.dumps({ 'error': 'id does not exists' }), 400
+        else:
+            tasks = session.query(db.OpenTask).filter(db.OpenTask.id == tid)
+            for task in tasks:
+                task.price_bonus = j['price_bonus']
 
-    tid = j['id']
-    if session.query(db.OpenTask).filter(db.OpenTask.id == tid).count() == 0:
-        session.close()
-        return json.dumps({ 'error': 'id does not exists' }), 400
-    else:
+            result = { 'error': None, 'success': True }, 200
 
-        session.close()
-
-        session = db.Session()
-
-        tasks = session.query(db.OpenTask).filter(db.OpenTask.id == tid)
-        for task in tasks:
-            task.price_bonus = j['price_bonus']
-
-        session.commit()
-
-        result = { 'error': None, 'success': True }, 200
-
-        return json.dumps(result)    
-        session.commit()
+            return json.dumps(result)    
 
 def sanitize_set_garbage(json):
     if not json:
@@ -259,27 +248,24 @@ def set_garbage():
             "price_bonus":12.34 })
         return json.dumps({ 'error': ('provide a valid json body! example: %s' % (example,)) }), 400
 
-    session = db.Session()
+    with db.session_scope() as session:
+        tid = j['id']
+        try:
+            task = session.query(db.OpenTask).filter(db.OpenTask.id == tid).one()
+        except NoResultFound:
+            return json.dumps({ 'error': 'id does not exists' }), 400
+        except MultipleResultsFound:
+            return json.dumps({ 'error': 'more than one result found' }), 400
 
-    tid = j['id']
-    try:
-        task = session.query(db.OpenTask).filter(db.OpenTask.id == tid).one()
-    except NoResultFound:
-        session.close()
-        return json.dumps({ 'error': 'id does not exists' }), 400
-    except MultipleResultsFound:
-        session.close()
-        return json.dumps({ 'error': 'more than one result found' }), 400
+        logger.info("set garbage called with task id %d", task.id)
 
-    logger.info("set garbage called with task id %d", task.id)
+        session.delete(task)
 
-    session.delete(task)
+        session.commit()
 
-    session.commit()
+        result = { 'error': None, 'success': True }, 200
 
-    result = { 'error': None, 'success': True }, 200
-
-    return json.dumps(result)    
+        return json.dumps(result)    
 
 
 if __name__ == "__main__":
