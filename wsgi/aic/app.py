@@ -78,7 +78,10 @@ def post_solve_task():
     try:
         result = requests.post(task.callback_link, data=json.dumps(post_body), headers=headers, timeout=10)
         if result.status_code != requests.codes.ok:
-            flash("Internal error 4! Could not finish task. Here is a new one!","danger")
+            if result.status_code == 401:
+                flash("Check your account status! You are not authorised to solve this task. Here is a new one!")
+            else:
+                flash("Internal error 4! Could not finish task. Here is a new one!","danger")
             return redirect(url_for("get_solve_task",r="t"))
     except Exception:
         flash("Internal error 5! Could not finish task. Here is a new one!","danger")
