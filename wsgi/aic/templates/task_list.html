@@ -29,7 +29,7 @@
                 <tr>
                     <td>{{ task.id }}</td>
                     <td>{{ task.task_description }}</td>
-                    <td>{{ task.task_text | max_size(30) }}</td>
+                    <td>{{ task.task_text | truncate(70) }}</td>
                     <td>{{ task.datetime | ago(1) }}</td>
                     <td>{{ task.price }}</td>
                     <td>{{ task.price_bonus }} </td>
@@ -39,21 +39,8 @@
         </tbody>
     </table>
 </div>
-<ul class="pagination pull-right">
-  {% if page > 0 %}
-    <li><a href="{{url_for('get_open_tasks', page=page-1)}}">&laquo;</a></li>
-  {% endif %}
-  {% for p in pre_pages %}
-  <li class="{{'active' if p == page else ''}}"><a href="{{url_for('get_open_tasks', page=p)}}">{{p + 1}}</a></li>
-  {% endfor %}
-  {% if display_dots %}
-      <li class="disabled"><a href="#">...</a></li>
-  {% endif %}
-  {% for p in post_pages %}
-      <li class="{{'active' if p == page else ''}}"><a href="{{url_for('get_open_tasks', page=p)}}">{{p + 1}}</a></li>
-  {% endfor %}
-  {% if page < max_page - 1 %}
-    <li><a href="{{url_for('get_open_tasks', page=page+1)}}">&raquo;</a></li>
-  {% endif %}
-</ul>
+<div class="pull-right text-right">
+  {{ pagination.info|safe }}
+  {{ pagination.links|safe }}
+</div> 
 {% endblock %}

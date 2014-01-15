@@ -9,3 +9,4 @@ itsdangerous==0.23
 psycopg2==2.5.1
 requests==2.0.1
 wsgiref==0.1.2
+flask-paginate

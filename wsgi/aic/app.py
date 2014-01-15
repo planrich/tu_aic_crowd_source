@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask, request, render_template, json, flash, redirect, url_for, session
+from flask.ext.paginate import Pagination
 import db
 import settings
 import requests
@@ -94,62 +95,35 @@ def post_solve_task():
         flash("Solved task. Here is a new one!", "success")
         return redirect(url_for("get_solve_task",r="t"))
 
-def sanitize_open_task_list_params():
-    order_by = 'id'
-    limit = 10
-    page = 0
-
-    ORDER_POS = [ 'id', 'question', 'text', 'date' ]
-
-    if "order" in request.args and request.args["order"] in ORDER_POS:
-        order_by = request.args["order"]
-
-    if "limit" in request.args:
-        limit = int(request.args["limit"])
-
-    if "page" in request.args:
-        page = int(request.args["page"])
-
-    return order_by, limit, page
-
-
 @application.route("/open_tasks", methods=['GET'])
 def get_open_tasks():
 
-    order_by, limit, page = sanitize_open_task_list_params()
+    try:
+        page = int(request.args.get("page",1))
+    except ValueError:
+        page = 1
 
     with db.session_scope() as sess:
+
+        per_page = 10
+
+        task_count = sess.query(db.OpenTask)\
+                .filter(db.OpenTask.solved == False).count()
         open_tasks = sess.query(db.OpenTask)\
             .order_by(db.OpenTask.datetime.asc())\
             .filter(db.OpenTask.solved == False)\
-            .offset(page * limit).limit(limit)\
+            .offset((page-1) * per_page).limit(per_page)\
             .all()
 
-        task_count = sess.query(db.OpenTask).filter(db.OpenTask.solved == False).count()
-
-        display_pages = 3
-        page_count = int(task_count/limit)
-        max_page = page_count
-        ipages = list(utils.drop(range(0, page_count), page))
-        post_pages = list(utils.drop(ipages, len(ipages) - display_pages))
-        pre_pages = list(utils.take(ipages, len(ipages) - display_pages))
-        pre_pages = list(utils.take(pre_pages, display_pages))
-        display_dots = len(ipages) > (display_pages * 2)
-        if not display_dots:
-            pre_pages = []
-            post_pages = utils.drop(range(0, int(task_count/limit)), page_count - display_pages * 2)
+        pagination = Pagination(page=page, 
+                total=task_count,
+                search=False,
+                per_page=per_page,
+                bs_version=3)
 
         return render_template("task_list.html", 
                 tasks = open_tasks, 
-                page = page, 
-                pre_pages = pre_pages,
-                post_pages = post_pages,
-                count = task_count,
-                limit = limit,
-                max_page = max_page,
-                display_dots = display_dots,
-                int = int,
-                len = len)
+                pagination = pagination)
 
 
 def sanitize_post_task(json):
