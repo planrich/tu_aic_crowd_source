@@ -47,14 +47,17 @@ def get_solve_task():
 def post_solve_task():
     with db.session_scope() as sess:
         if "answer" not in request.form:
+            logger.error("solving task %s. failed no answer", str(task_id))
             flash("Task was not rated. No answer provided. Here is a new task!", "danger")
             return redirect(url_for("get_solve_task",r="t"))
 
         if "user_id" not in request.form:
+            logger.error("solving task %s. failed no userid", str(task_id))
             flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
             return redirect(url_for("get_solve_task",r="t"))
 
         if "task_id" not in request.form:
+            logger.error("solving task %s. failed no taskid", str(task_id))
             flash("Internal failure. Here is a new task!", "danger")
             return redirect(url_for("get_solve_task",r="t"))
 
@@ -63,6 +66,7 @@ def post_solve_task():
         user_id = request.form["user_id"]
 
         if user_id is None or user_id.strip() == "":
+            logger.error("solving task %s. failed no username", str(task_id))
             flash("You did not provide your user_id. Here is a new task! Try again.", "danger")
             return redirect(url_for("get_solve_task",r="t"))
 
@@ -71,6 +75,7 @@ def post_solve_task():
         try:
             task = sess.query(db.OpenTask).filter(db.OpenTask.id == task_id).one()
         except NoResultFound:
+            logger.error("solving task %s. failed 3", str(task_id))
             flash("Internal failure. Here is a new task!", "danger")
             return redirect(url_for("get_solve_task",r="t"))
 
@@ -80,15 +85,19 @@ def post_solve_task():
             result = requests.post(task.callback_link, data=json.dumps(post_body), headers=headers, timeout=10)
             if result.status_code != requests.codes.ok:
                 if result.status_code == 401:
+                    logger.error("solving task %s. failed worker blocked", str(task_id))
                     flash("Check your account status! You are not authorised to solve this task", "warning")
                     return redirect(url_for("index"))
                 else:
+                    logger.error("solving task %s. failed 4", str(task_id))
                     flash("Internal error 4! Could not finish task. Here is a new one!","danger")
         except Exception:
+            logger.error("solving task %s. failed 5", str(task_id))
             flash("Internal error 5! Could not finish task. Here is a new one!","danger")
             return redirect(url_for("get_solve_task",r="t"))
 
 
+        logger.info("solved task %s correctly", str(task_id))
         task.solved = True
         sess.commit()
 
