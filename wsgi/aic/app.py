@@ -119,7 +119,7 @@ def get_open_tasks():
         task_count = sess.query(db.OpenTask)\
                 .filter(db.OpenTask.solved == False).count()
         open_tasks = sess.query(db.OpenTask)\
-            .order_by(db.OpenTask.datetime.asc())\
+            .order_by(db.OpenTask.datetime.asc(), func.substr(db.OpenTask.id, 0, func.length(db.OpenTask.id) - 2))\
             .filter(db.OpenTask.solved == False)\
             .offset((page-1) * per_page).limit(per_page)\
             .all()
