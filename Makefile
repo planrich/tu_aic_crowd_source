@@ -2,7 +2,10 @@ run:
 	python wsgi/aic/app.py
 
 create_db: 
-	sudo -u postgres createdb aic
+	sudo -u postgres createdb -O aic aic 
+
+drop_db:
+	sudo -u postgres dropdb aic
 
 demo_run:
 	python wsgi/aic/app.py
