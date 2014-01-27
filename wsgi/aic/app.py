@@ -255,5 +255,13 @@ def set_garbage():
 
 
 if __name__ == "__main__":
+    crowd_host = '127.0.0.1'
+    crowd_port = 5001
+
+    if settings.CROWD_LISTEN_ADDRESS:
+        crowd_host = settings.CROWD_LISTEN_ADDRESS
+    if settings.CROWD_LISTEN_PORT:
+        crowd_port = settings.CROWD_LISTEN_PORT
+
     application.debug = True
-    application.run(port=5001)
+    application.run(host=crowd_host, port=crowd_port)
