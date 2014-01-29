@@ -6,11 +6,15 @@ or id like '128_%'
 or id like '129_%';
 
 UPDATE public.open_tasks set datetime = NOW() - '1 day'::INTERVAL * 9
-Where id like '130_%' 
-or id like '131_%'
-or id like '132_%'
-or id like '133_%'
-or id like '134_%';
+Where id like '134_%'
+UPDATE public.open_tasks set datetime = NOW() - '1 day'::INTERVAL * 9
+Where id like '133_%'
+UPDATE public.open_tasks set datetime = NOW() - '1 day'::INTERVAL * 9
+Where id like '132_%'
+UPDATE public.open_tasks set datetime = NOW() - '1 day'::INTERVAL * 9
+Where id like '131_%'
+UPDATE public.open_tasks set datetime = NOW() - '1 day'::INTERVAL * 9
+Where id like '130_%'
 
 UPDATE public.open_tasks set datetime = NOW() - '1 day'::INTERVAL * 5
 Where id like '135_%' 
